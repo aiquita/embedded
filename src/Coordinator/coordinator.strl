@@ -1,0 +1,17 @@
+module coordinator:
+    input HEART_BEAT, TIME_OUT;
+    output RESET;
+    loop
+        signal TRIGGER(float) in
+            run PULSE
+        ||
+            abort
+                await TIME_OUT;
+                emit TRIGGER(2.167f); % TODO calculate amplitude 
+            when immediate HEART_BEAT do
+                emit RESET
+            end abort
+        end signal;
+        pause
+    end loop
+end module
