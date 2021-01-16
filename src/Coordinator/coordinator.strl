@@ -10,9 +10,9 @@ module coordinator:
                     await TIME_OUT;
                     emit TRIGGER(2.167f); % TODO calculate amplitude 
                 when immediate HEART_BEAT do
-                    emit RESET;
-                    pause
-                end abort
+                    emit RESET
+                end abort;
+                pause
             end loop
         end signal;
         pause
