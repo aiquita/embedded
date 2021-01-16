@@ -1,0 +1,11 @@
+module pacemaker:
+input INT(integer), HEART_BEAT;
+output TIME_OUT; 
+    signal RESET, BPM(integer) in
+        run coordinator
+    ||
+        run TIMEOUT
+    ||
+        run FREQ
+    end signal
+end module
