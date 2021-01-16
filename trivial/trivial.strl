@@ -1,0 +1,9 @@
+module trivial:
+    input SECOND;
+    function PRINT () : boolean;
+    output O(boolean);
+    loop
+        emit O(PRINT());
+        pause
+    each SECOND
+end module
