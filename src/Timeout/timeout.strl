@@ -1,0 +1,22 @@
+module TIMEOUT:
+    input INT, BPM(integer), RESET;
+    relation RESET => BPM;
+    output TIME_OUT;
+    var lastBPM : integer in
+        await immediate BPM;
+        lastBPM := ?BPM;
+        loop
+            var passed := 0 : integer in
+                abort
+                    every INT do
+                        passed := passed + 1;
+                        if passed > (12000 / (lastBPM + 3)) then emit TIME_OUT end
+                    end
+                when immediate RESET do
+                    lastBPM := ?BPM;
+                    pause
+                end abort
+            end var
+        end loop
+    end var
+end module
