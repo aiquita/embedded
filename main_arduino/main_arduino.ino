@@ -1,7 +1,6 @@
 /* Pin declarations */
 
-int A_1 = 1; // analog 1
-const int D_6 = 6; // digital 2
+const int D6 = 6; // used for analog write
 
 /* Global variables */ 
 
@@ -9,11 +8,13 @@ volatile boolean inhibitPeek = false;
 volatile boolean beat = false;
 volatile int lastBeatAmpl = 0;
 
+volatile boolean pulseActive = false;
+volatile int remainingPulseLength = 0;
+
 void setup() {
   Serial.begin(9600);
 
-  pinMode(D_6, OUTPUT);
-  pinMode(A_1, INPUT);
+  pinMode(D6, OUTPUT);
   
   setupInterrupts();  
 }
@@ -34,6 +35,7 @@ void setupInterrupts() {
 }
 
 ISR(TIMER1_COMPA_vect) {
+  terminatePulseIfRequired();
   senseForHeartbeat();
   if (beat) {
     Serial.print("Beat: ");
@@ -46,7 +48,7 @@ void senseForHeartbeat() {
     beat = false;
   }
   
-  int beatValue = analogRead(A_1);
+  int beatValue = analogRead(A1);
   if (beatValue > 5 && !inhibitPeek) {
     inhibitPeek = true;
     beat = true;
@@ -57,5 +59,33 @@ void senseForHeartbeat() {
   }
 }
 
+/**
+ * Sends a pulse.
+ * 
+ * length: Length in milli seconds. Should be divideable by 5. Portion that is not aligned to 5 will be ignored.
+ * scale: Between 0 and 255.
+ */
+void sendPulse(int length, int scale) {
+  analogWrite(D6, scale);
+  pulseActive = true;
+  remainingPulseLength = length;
+}
+
+/**
+ * Called by timing interrupt to terminate pulse after its length.
+ */
+void terminatePulseIfRequired() {
+  if (pulseActive) {
+    remainingPulseLength = remainingPulseLength - 5;
+    
+    if (remainingPulseLength < 5) {
+      pulseActive = false;
+      analogWrite(D6, 0);
+    }
+  }
+}
+
 void loop() {
+  sendPulse(1000, 100);
+  delay(2000);
 }
