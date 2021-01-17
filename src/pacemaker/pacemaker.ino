@@ -6,10 +6,14 @@
 const int bpm = 60;
 const int interval = 60000 / bpm;
 
-volatile int lastBeat;
+volatile long long lastBeat;
 volatile int ctr = 0;
+volatile int freqCtr = 0;
 
-extern "C" void SEND_PULSE(float);
+extern "C" { 
+  void SEND_PULSE(float);
+  void EPRINT(int);
+}
 
 void SEND_PULSE(float ampl) {
   char buf[128];
@@ -17,6 +21,12 @@ void SEND_PULSE(float ampl) {
   sprintf(buf, "Sending Pulse with %d\n", ampr);
   Serial.print(buf);
 }
+
+void EPRINT(int val) {
+  Serial.print("PRINT: ");
+  Serial.print(val);
+}
+
 
 void pacemaker_O_BPM(int bmp){
   char buf[128];
@@ -45,7 +55,7 @@ void setupInterrupts() {
 
 ISR(TIMER1_COMPA_vect) {
   // TODO: Try passing the interrupts since last heart beat
-  pacemaker_I_INT(1);
+  freqCtr++;
 }
 
 void setup() {
@@ -65,6 +75,11 @@ void loop() {
       lastBeat = millis();
     }
   }
+  cli();
+  pacemaker_I_INT(freqCtr);
+  freqCtr = 0;
+  sei();
+  
   // Maybe more carful with interrupts here
   pacemaker();
 }
