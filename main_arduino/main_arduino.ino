@@ -1,3 +1,10 @@
+#include "libpacemaker.h"
+#include "stdio.h"
+
+extern "C" { 
+  void SEND_PULSE(float);
+}
+
 /* Pin declarations */
 
 const int D6 = 6; // used for analog write
@@ -10,6 +17,8 @@ volatile int lastBeatAmpl = 0;
 
 volatile boolean pulseActive = false;
 volatile int remainingPulseLength = 0;
+
+volatile int freqCtr = 0;
 
 void setup() {
   Serial.begin(9600);
@@ -38,9 +47,12 @@ ISR(TIMER1_COMPA_vect) {
   terminatePulseIfRequired();
   senseForHeartbeat();
   if (beat) {
+    PACEMAKER_I_HEART_BEAT();
     Serial.print("Beat: ");
     Serial.println(lastBeatAmpl);
   }
+
+  freqCtr++;
 }
 
 void senseForHeartbeat() {
@@ -69,6 +81,15 @@ void sendPulse(int length, int scale) {
   analogWrite(D6, scale);
   pulseActive = true;
   remainingPulseLength = length;
+  Serial.println("Pulse triggered");
+}
+
+void SEND_PULSE(float ampl) {
+  sendPulse(70, ampl * 255 / 5);
+}
+
+void PACEMAKER_O_TIME_OUT() {
+  
 }
 
 /**
@@ -86,6 +107,11 @@ void terminatePulseIfRequired() {
 }
 
 void loop() {
-  sendPulse(1000, 100);
-  delay(2000);
+  cli();
+  PACEMAKER_I_INT(freqCtr);
+  freqCtr = 0;
+  sei();
+  
+  // Maybe more carful with interrupts here
+  PACEMAKER();
 }

@@ -28,13 +28,13 @@ void EPRINT(int val) {
 }
 
 
-void pacemaker_O_BPM(int bmp){
+void PACEMAKER_O_BPM(int bmp){
   char buf[128];
   sprintf(buf, "BPM is %d\n", bpm);
   Serial.print(buf);
 }
 
-void pacemaker_O_TIME_OUT() {
+void PACEMAKER_O_TIME_OUT() {
   Serial.print("TIME OUT");
 }
 
@@ -71,15 +71,15 @@ void loop() {
       lastBeat = millis();
     } else {
       Serial.print("REGULAR BEAT\n");
-      pacemaker_I_HEART_BEAT();
+      PACEMAKER_I_HEART_BEAT();
       lastBeat = millis();
     }
   }
   cli();
-  pacemaker_I_INT(freqCtr);
+  PACEMAKER_I_INT(freqCtr);
   freqCtr = 0;
   sei();
   
   // Maybe more carful with interrupts here
-  pacemaker();
+  PACEMAKER();
 }
