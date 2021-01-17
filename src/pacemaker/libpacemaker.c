@@ -130,7 +130,7 @@ SEND_PULSE(__pacemaker_V4)
 /* CONDITIONS */
 
 #define __pacemaker_A15 \
-__pacemaker_V6>((12000/(__pacemaker_V5+3))+1)
+__pacemaker_V6>((12000/(__pacemaker_V5-3))+2)
 
 /* DECREMENTS */
 
