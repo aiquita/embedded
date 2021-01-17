@@ -1,4 +1,4 @@
-ES_SOURCES = $(wildcard */*.strl)
+ES_SOURCES = $(wildcard components/*.strl)
 CC = C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin\gcc
 LIB = ../lib
 libpacemaker.c: $(ES_SOURCES)
