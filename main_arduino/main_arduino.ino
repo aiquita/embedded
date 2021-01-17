@@ -7,12 +7,13 @@ extern "C" {
 
 /* Pin declarations */
 
-const int D6 = 6; // used for analog write
+const int PULSING_PIN = 6; // used for analog write
+const int SENSING_PIN = A1;
 
 /* Global variables */ 
 
 volatile boolean inhibitPeek = false;
-volatile boolean beat = false;
+volatile boolean beatReady = false;
 volatile int lastBeatAmpl = 0;
 
 volatile boolean pulseActive = false;
@@ -23,7 +24,7 @@ volatile int freqCtr = 0;
 void setup() {
   Serial.begin(9600);
 
-  pinMode(D6, OUTPUT);
+  pinMode(PULSING_PIN, OUTPUT);
   
   setupInterrupts();  
 }
@@ -46,27 +47,37 @@ void setupInterrupts() {
 ISR(TIMER1_COMPA_vect) {
   terminatePulseIfRequired();
   senseForHeartbeat();
-  if (beat) {
-    PACEMAKER_I_HEART_BEAT();
-    Serial.print("Beat: ");
-    Serial.println(lastBeatAmpl);
-  }
-
   freqCtr++;
 }
 
-void senseForHeartbeat() {
-  if (beat) {
-    beat = false;
+/**
+ * Terminates a pulse if its time length exceeded.
+ */
+inline void terminatePulseIfRequired() {
+  if (pulseActive) {
+    remainingPulseLength--;
+    
+    if (remainingPulseLength == 0) {
+      pulseActive = false;
+      analogWrite(PULSING_PIN, 0);
+    }
   }
-  
-  int beatValue = analogRead(A1);
-  if (beatValue > 5 && !inhibitPeek) {
+}
+
+/**
+ * Senses for a heartbeat.
+ * 
+ * Sensing uses a threshold of 5 in order to ignore arbitrary fluctuations.
+ * Sensing is inhibited until amplitued drops under 5. 
+ */
+inline void senseForHeartbeat() {
+  int beatValue = analogRead(SENSING_PIN);
+  if (beatValue >= 5 && !inhibitPeek) {
     inhibitPeek = true;
-    beat = true;
+    beatReady = true;
     lastBeatAmpl = beatValue;
   }
-  if (beatValue <= 5 && inhibitPeek) {
+  if (beatValue < 5 && inhibitPeek) {
     inhibitPeek = false;
   }
 }
@@ -74,11 +85,11 @@ void senseForHeartbeat() {
 /**
  * Sends a pulse.
  * 
- * length: Length in milli seconds. Should be divideable by 5. Portion that is not aligned to 5 will be ignored.
+ * length: Duration in millis is calculated by 5 * length. 
  * scale: Between 0 and 255.
  */
 void sendPulse(int length, int scale) {
-  analogWrite(D6, scale);
+  analogWrite(PULSING_PIN, scale);
   pulseActive = true;
   remainingPulseLength = length;
   Serial.println("Pulse triggered");
@@ -92,26 +103,27 @@ void PACEMAKER_O_TIME_OUT() {
   
 }
 
-/**
- * Called by timing interrupt to terminate pulse after its length.
- */
-void terminatePulseIfRequired() {
-  if (pulseActive) {
-    remainingPulseLength = remainingPulseLength - 5;
-    
-    if (remainingPulseLength < 5) {
-      pulseActive = false;
-      analogWrite(D6, 0);
-    }
-  }
+void PACEMAKER_O_BPM(int bpm) {
+  Serial.println(bpm);
 }
+
+
 
 void loop() {
   cli();
+  
   PACEMAKER_I_INT(freqCtr);
   freqCtr = 0;
-  sei();
+
+  if (beatReady) {
+    PACEMAKER_I_HEART_BEAT();
+    Serial.print("Beat: ");
+    Serial.println(lastBeatAmpl);
+    beatReady = false;
+  }
   
+  sei();
+
   // Maybe more carful with interrupts here
   PACEMAKER();
 }
