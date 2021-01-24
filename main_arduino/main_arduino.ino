@@ -3,6 +3,7 @@
 
 extern "C" { 
   void SEND_PULSE(float);
+  float CALC_AMPL(int);
 }
 
 /* Pin declarations */
@@ -96,7 +97,7 @@ void sendPulse(int length, int scale) {
 }
 
 void SEND_PULSE(float ampl) {
-  sendPulse(70, ampl * 255 / 5);
+  sendPulse(14, (ampl * 255) / 5);
 }
 
 void PACEMAKER_O_TIME_OUT() {
@@ -107,7 +108,9 @@ void PACEMAKER_O_BPM(int bpm) {
   Serial.println(bpm);
 }
 
-
+float CALC_AMPL(int freq) {
+  return freq * 0.0042 + 0.25 - 0.07;
+}
 
 void loop() {
   cli();
