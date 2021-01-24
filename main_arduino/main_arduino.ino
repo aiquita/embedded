@@ -143,15 +143,17 @@ void PACEMAKER_O_BPM(int bpm) {
 void PACEMAKER_O_TIME_OUT() {
 }
 
-float CALC_AMPL(int freq) {
-  int normal = freq * 0.0042 + 0.25;
-  int sport = freq * 0.016 + 1;
-
-  int localAmpl = lastAmplitude;
-  int diffN = normal - localAmpl;
-  int diffS = sport - localAmpl;
+float CALC_AMPL(int iFreq) {
+  float freq = (float) iFreq;
   
-  return diffS > diffN ? normal : sport;
+  float normal = freq * 0.0042 + 0.25;
+  float sport = freq * 0.016 + 1;
+
+  float localAmpl = lastAmplitude;
+  float diffN = normal - localAmpl;
+  float diffS = sport - localAmpl;
+  
+  return (diffS > diffN ? normal : sport) - 0.05;
 }
 
 void loop() {
