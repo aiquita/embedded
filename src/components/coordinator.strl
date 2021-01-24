@@ -11,6 +11,7 @@ module COORDINATOR:
                 abort
                     await TIME_OUT;
                     emit TRIGGER(CALC_AMPL(lastBPM));
+                    emit RESET
                 when immediate HEART_BEAT do
                     emit RESET;
                     present(BPM) then
