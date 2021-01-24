@@ -3,7 +3,7 @@
 
 extern "C" { 
   void SEND_PULSE(float);
-  float CALC_AMPL(int);
+  float CALC_AMPL(int, int);
 }
 
 /* Pin declarations */
@@ -100,16 +100,16 @@ void SEND_PULSE(float ampl) {
   sendPulse(14, (ampl * 255) / 5);
 }
 
-void PACEMAKER_O_TIME_OUT() {
-  
-}
-
 void PACEMAKER_O_BPM(int bpm) {
   Serial.println(bpm);
 }
 
-float CALC_AMPL(int freq) {
-  return freq * 0.0042 + 0.25 - 0.07;
+float CALC_AMPL(int freq, int lastAmpl) {
+  int normal = freq * 0.0042 + 0.25;
+  int sport = freq * 0.016 + 1;
+  int diffN = normal - lastAmpl;
+  int diffS = sport - lastAmpl;
+  return diffS > diffN ? normal : sport;
 }
 
 void loop() {
@@ -120,6 +120,7 @@ void loop() {
 
   if (beatReady) {
     PACEMAKER_I_HEART_BEAT();
+    // TODO: PACEMAKER_I_AMPLITUDE(lastAmplitude);
     Serial.print("Beat: ");
     Serial.println(lastBeatAmpl);
     beatReady = false;
