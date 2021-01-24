@@ -85,13 +85,12 @@ inline void terminatePulseIfRequired() {
  */
 inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
-  if (beatValue >= 20 && !inhibitPeek) {
-    Serial.println(beatValue);
+  if (beatValue >= 20 && !inhibitPeek) { // means that a new beat peek was found
     inhibitPeek = true;
     inhibitMeasurement = false;
     absSampleDiff.clear();
   }
-  if (beatValue < 20 && inhibitPeek) {
+  if (beatValue < 20 && inhibitPeek) { // means that the current beat has ended
     inhibitPeek = false;
   } 
 }
@@ -101,14 +100,16 @@ inline void senseForHeartbeat() {
  */
 inline void mesureHeartbeatAmplitude() {
   if (inhibitMeasurement || cyclesWaited++ < 2) return;
-  int beatValue = analogRead(SENSING_PIN);
   
+  int beatValue = analogRead(SENSING_PIN);
   absSampleDiff.addValue((beatValue/1023.0)*5);
+  
   if (++samplesCount >= 3) {
     lastAmplitude = absSampleDiff.getAverage();
     samplesCount = 0;
     cyclesWaited = 0;
     inhibitMeasurement = true;
+	
     if (lastAmplitude > 1 && !firstHeartbeatFound) {
       freqCtr = 0;
       firstHeartbeatFound = true;
@@ -136,6 +137,7 @@ void SEND_PULSE(float ampl) {
 }
 
 void PACEMAKER_O_BPM(int bpm) {
+  Serial.print("BPM: ");
   Serial.println(bpm);
 }
 
