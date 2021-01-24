@@ -4,7 +4,7 @@
 
 extern "C" { 
   void SEND_PULSE(float);
-  float CALC_AMPL(int, int);
+  float CALC_AMPL(int);
 }
 
 /* Pin declarations */
@@ -143,11 +143,14 @@ void PACEMAKER_O_BPM(int bpm) {
 void PACEMAKER_O_TIME_OUT() {
 }
 
-float CALC_AMPL(int freq, int lastAmpl) {
+float CALC_AMPL(int freq) {
   int normal = freq * 0.0042 + 0.25;
   int sport = freq * 0.016 + 1;
-  int diffN = normal - lastAmpl;
-  int diffS = sport - lastAmpl;
+
+  int localAmpl = lastAmplitude;
+  int diffN = normal - localAmpl;
+  int diffS = sport - localAmpl;
+  
   return diffS > diffN ? normal : sport;
 }
 
