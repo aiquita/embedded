@@ -89,6 +89,12 @@ inline void senseForHeartbeat() {
     inhibitPeek = true;
     inhibitMeasurement = false;
     absSampleDiff.clear();
+    if (!firstHeartbeatFound && lastAmplitude > 1){
+      firstHeartbeatFound = true;
+      freqCtr = 0;
+      return;
+    }
+    beatReady = true;
   }
   if (beatValue < 20 && inhibitPeek) { // means that the current beat has ended
     inhibitPeek = false;
@@ -109,13 +115,6 @@ inline void mesureHeartbeatAmplitude() {
     samplesCount = 0;
     cyclesWaited = 0;
     inhibitMeasurement = true;
-	
-    if (lastAmplitude > 1 && !firstHeartbeatFound) {
-      freqCtr = 0;
-      firstHeartbeatFound = true;
-    } else {
-      beatReady = true; 
-    }
   }
 }
 
@@ -159,16 +158,16 @@ void loop() {
   
   PACEMAKER_I_INT(freqCtr);
   freqCtr = 0;
-
-  if (beatReady) {
+  bool lBeat = beatReady;
+  
+  sei();
+  
+  if (lBeat) {
     PACEMAKER_I_HEART_BEAT();
-    PACEMAKER_I_AMPLITUDE(lastAmplitude);
     Serial.print("Beat: ");
     Serial.println(lastAmplitude);
     beatReady = false;
   }
-  
-  sei();
 
   // Maybe more carful with interrupts here
   PACEMAKER();

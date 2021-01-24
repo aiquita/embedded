@@ -11,7 +11,7 @@ module TIMEOUT:
                 trap TOUT in
                     every INT do
                         passed := passed + ?INT;
-                        if passed > ((12000 / (lastBPM - 3)) + 2) 
+                        if passed > ((12000 / (lastBPM - 3)) + 1) 
                             then emit TIME_OUT; exit TOUT 
                         end
                     end
