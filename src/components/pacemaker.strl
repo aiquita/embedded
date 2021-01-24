@@ -1,7 +1,7 @@
 module PACEMAKER:
 input INT(integer), HEART_BEAT;
-output TIME_OUT, BPM(integer);
-    signal RESET in
+output BPM(integer);
+    signal RESET, TIME_OUT in
         run COORDINATOR
     ||
         run TIMEOUT
