@@ -4,7 +4,6 @@ extern "C"
 #endif
 void PACEMAKER_I_HEART_BEAT();
 void PACEMAKER_I_INT(int);
-void PACEMAKER_I_AMPLITUDE(int);
 void PACEMAKER_O_BPM(int);
 // void PACEMAKER_O_PASSED(int);
 void PACEMAKER_O_TIME_OUT();
