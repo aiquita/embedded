@@ -87,7 +87,6 @@ inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
   if (beatValue >= 20 && !inhibitPeek) {
     Serial.println(beatValue);
-    firstHeartbeatFound = true;
     inhibitPeek = true;
     inhibitMeasurement = false;
     absSampleDiff.clear();
@@ -106,7 +105,12 @@ inline void mesureHeartbeatAmplitude() {
   
   absSampleDiff.addValue((beatValue/1023.0)*5);
   if (++samplesCount >= 3) {
-    beatReady = true;
+    if (!firstHeartbeatFound) {
+      freqCtr = 0;
+      firstHeartbeatFound = true;
+    } else {
+      beatReady = true; 
+    }
     lastAmplitude = absSampleDiff.getAverage();
     samplesCount = 0;
     cyclesWaited = 0;
