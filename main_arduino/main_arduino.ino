@@ -105,16 +105,16 @@ inline void mesureHeartbeatAmplitude() {
   
   absSampleDiff.addValue((beatValue/1023.0)*5);
   if (++samplesCount >= 3) {
-    if (!firstHeartbeatFound) {
+    lastAmplitude = absSampleDiff.getAverage();
+    samplesCount = 0;
+    cyclesWaited = 0;
+    inhibitMeasurement = true;
+    if (lastAmplitude > 1 && !firstHeartbeatFound) {
       freqCtr = 0;
       firstHeartbeatFound = true;
     } else {
       beatReady = true; 
     }
-    lastAmplitude = absSampleDiff.getAverage();
-    samplesCount = 0;
-    cyclesWaited = 0;
-    inhibitMeasurement = true;
   }
 }
 
