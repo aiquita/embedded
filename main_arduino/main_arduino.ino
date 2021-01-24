@@ -85,7 +85,7 @@ inline void terminatePulseIfRequired() {
  */
 inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
-  if (beatValue >= 20 && !inhibitPeek) { // means that a new beat peek was found
+  if (beatValue >= 5 && !inhibitPeek) { // means that a new beat peek was found
     inhibitPeek = true;
     inhibitMeasurement = false;
     absSampleDiff.clear();
@@ -96,7 +96,7 @@ inline void senseForHeartbeat() {
     }
     beatReady = true;
   }
-  if (beatValue < 20 && inhibitPeek) { // means that the current beat has ended
+  if (beatValue < 5 && inhibitPeek) { // means that the current beat has ended
     inhibitPeek = false;
   } 
 }
