@@ -5,6 +5,7 @@
 extern "C" { 
   void SEND_PULSE(float);
   float CALC_AMPL(int);
+  int CALC_BPM(int, int);
 }
 
 /* Pin declarations */
@@ -23,6 +24,7 @@ volatile float lastAmplitude = 0;
 
 volatile boolean pulseActive = false;
 volatile int remainingPulseLength = 0;
+volatile boolean triggerHappened = false;
 
 volatile int freqCtr = 0;
 
@@ -85,7 +87,8 @@ inline void terminatePulseIfRequired() {
  */
 inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
-  if (beatValue >= 5 && !inhibitPeek) { // means that a new beat peek was found
+  if (beatValue >= 20 && !inhibitPeek) {
+    Serial.println(beatValue);
     inhibitPeek = true;
     inhibitMeasurement = false;
     absSampleDiff.clear();
@@ -96,7 +99,7 @@ inline void senseForHeartbeat() {
     }
     beatReady = true;
   }
-  if (beatValue < 5 && inhibitPeek) { // means that the current beat has ended
+  if (beatValue < 20 && inhibitPeek) {
     inhibitPeek = false;
   } 
 }
@@ -106,10 +109,9 @@ inline void senseForHeartbeat() {
  */
 inline void mesureHeartbeatAmplitude() {
   if (inhibitMeasurement || cyclesWaited++ < 2) return;
-  
   int beatValue = analogRead(SENSING_PIN);
-  absSampleDiff.addValue((beatValue/1023.0)*5);
   
+  absSampleDiff.addValue((beatValue/1023.0)*5);
   if (++samplesCount >= 3) {
     lastAmplitude = absSampleDiff.getAverage();
     samplesCount = 0;
@@ -136,11 +138,11 @@ void SEND_PULSE(float ampl) {
 }
 
 void PACEMAKER_O_BPM(int bpm) {
-  Serial.print("BPM: ");
   Serial.println(bpm);
 }
 
 void PACEMAKER_O_TIME_OUT() {
+  triggerHappened = true;
 }
 
 float CALC_AMPL(int iFreq) {
@@ -154,6 +156,18 @@ float CALC_AMPL(int iFreq) {
   float diffS = sport - localAmpl;
   
   return (diffS > diffN ? normal : sport) - 0.05;
+}
+
+int CALC_BPM(int ticks, int lastBPM) {
+  if (!ticks) return lastBPM;
+  if (triggerHappened) {
+    triggerHappened = false;
+    return lastBPM;
+  }
+
+  const int newBPM = (60000 / (ticks * 5));
+  
+  return constrain(newBPM, lastBPM - 3, lastBPM + 3);
 }
 
 void loop() {
