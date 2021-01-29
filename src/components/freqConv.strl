@@ -6,15 +6,9 @@ module FREQ_CONV:
         loop
             var ticks := 0 : integer in 
                 weak abort
-                    loop
-                        abort 
-                            every INT do
-                                ticks := ticks + ?INT
-                            end
-                        when TIME_OUT do
-                            ticks := 0
-                        end abort
-                    end loop
+					every INT do
+						ticks := ticks + ?INT
+					end
                 when RESET do
                     lastBPM := CALC_BPM(ticks, lastBPM);
                     emit BPM(lastBPM)

@@ -88,7 +88,6 @@ inline void terminatePulseIfRequired() {
 inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
   if (beatValue >= 20 && !inhibitPeek) {
-    Serial.println(beatValue);
     inhibitPeek = true;
     inhibitMeasurement = false;
     absSampleDiff.clear();
@@ -138,6 +137,7 @@ void SEND_PULSE(float ampl) {
 }
 
 void PACEMAKER_O_BPM(int bpm) {
+  Serial.print("BPM signal: ");
   Serial.println(bpm);
 }
 
