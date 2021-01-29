@@ -145,6 +145,9 @@ void PACEMAKER_O_TIME_OUT() {
   triggerHappened = true;
 }
 
+volatile int lastLocalAmpl = 0;
+volatile bool sportMode = false;
+
 float CALC_AMPL(int iFreq) {
   float freq = (float) iFreq;
   
@@ -152,9 +155,13 @@ float CALC_AMPL(int iFreq) {
   float sport = freq * 0.016 + 1;
 
   float localAmpl = lastAmplitude;
+  lastLocalAmpl = localAmpl;
+  
   float diffN = normal - localAmpl;
   float diffS = sport - localAmpl;
-  
+
+  sportMode = diffS <= diffN;
+ 
   return (diffS > diffN ? normal : sport) - 0.05;
 }
 
@@ -180,11 +187,20 @@ void loop() {
   bool lBeat = beatReady;
   
   sei();
+
+  if (triggerHappened) {
+    Serial.print("Last ampl: ");
+    Serial.println(lastAmplitude);
+  }
   
   if (lBeat) {
     PACEMAKER_I_HEART_BEAT();
     Serial.print("Beat: ");
     Serial.println(lastAmplitude);
+    Serial.print("MODE: ");
+    Serial.println(sportMode ? "Sport" : "Normal");
+    Serial.print("Last local ampl: ");
+    Serial.println(lastLocalAmpl);
     beatReady = false;
   }
 
