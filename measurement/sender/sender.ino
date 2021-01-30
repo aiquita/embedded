@@ -14,6 +14,8 @@ void setup() {
                                                    // COM = 10 aktiviert nichtinvertierende PWM
   TCCR2B = _BV(CS22);   //Prescaler = 
   OCR2A = 180;    //Output compare Wert
+
+  sendMeasurements();
 }
 
 void sendMeasurements() {
