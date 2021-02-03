@@ -1,7 +1,7 @@
 #include "RunningAverage.h"
 
 const int SENSING_PIN = A1;
-RunningAverage sampler(10);
+RunningAverage sampler(20);
 
 void setup() {
   Serial.begin(9600);
@@ -9,7 +9,7 @@ void setup() {
 
 float takeSample(){
   sampler.clear();
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 20; ++i) {
     const float val = analogRead(SENSING_PIN) * 0.0049;
     sampler.addValue(val);
     delay(5);
@@ -30,20 +30,22 @@ void printCSV(float should, float is) {
 
 volatile bool reset = true;
 
+volatile bool ongoingPulse = true;
+
 void loop() {
     if (analogRead(SENSING_PIN) < 20) {
       reset = false;
       return;
     }
     if (reset) return;
-    
+
     // Incoming measurement
     delay(15);
     const float is = takeSample();
     const float should = base + (iterCycle++) * multiplier;
     printCSV(should, is);
     reset = true;
-    
+
     // Idle when measurement is done
-    while(should >= 4.0); 
+    while(should >= 5.0); 
 }

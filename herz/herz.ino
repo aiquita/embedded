@@ -191,6 +191,8 @@ void changeFreq(int cF){
     ampl = freq*0.016 + 1;      //Amplitude proportional zu Frequenz(2-4V)
     //ampl = freq*0.0042 +0.25;   //Amplitude proportional zu Frequenz
     interrupts();
+    Serial.println("Frequenz:");
+    Serial.println(freq);
     Serial.println("Frequenz geaendert um:");
     Serial.println(cF);
   }
@@ -236,7 +238,7 @@ void nextStep(){
     }
   }else{            //Sonst wird zufällig der naechste Schritt gewaehlt
     decide = random(0, 6);
-    if(timeRef < 180000 && decide == 1){  //physAct() erst ab 180s
+    if(timeRef < 30000 && decide == 1){  //physAct() erst ab 180s
       decide = 3;
     }else{
       if(lastDecide == 1 || lastDecide == 0){
@@ -316,11 +318,11 @@ void waitForImp(){
       }else{
         Serial.print("Impulsamplitude nicht korrekt: ");
         Serial.println(absSampleDiff.getAverage());
-        break;
+        // break;
       }
-      //patState = alive;   //Fuer Debugging ohne Beruecksichtigung der Amplitude
-      //saved = 1;
-      //break;
+      patState = alive;   //Fuer Debugging ohne Beruecksichtigung der Amplitude
+      saved = 1;
+      break;
     }    
   }
 

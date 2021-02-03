@@ -5,7 +5,8 @@
 extern "C" { 
   void SEND_PULSE(float);
   float CALC_AMPL(int);
-  int CALC_BPM(int, int);
+  int CALC_BPM();
+  int BPM_TO_FREQ(int);
 }
 
 /* Pin declarations */
@@ -28,7 +29,9 @@ volatile boolean triggerHappened = false;
 
 volatile int freqCtr = 0;
 
-RunningAverage absSampleDiff(5);
+volatile long lastHeartbeatTime = 0;
+
+RunningAverage absSampleDiff(20);
 volatile int cyclesWaited = 0;
 volatile int samplesCount = 0;
 
@@ -58,11 +61,15 @@ void setupInterrupts() {
   sei();
 }
 
+volatile long intCount = 0;
+volatile long lastCount = 0;
+
 ISR(TIMER1_COMPA_vect) {
   terminatePulseIfRequired();
   senseForHeartbeat();
   mesureHeartbeatAmplitude();
   freqCtr++;
+  intCount++;
 }
 
 /**
@@ -107,17 +114,21 @@ inline void senseForHeartbeat() {
  * Mesures the hearbeat by average of three samples.
  */
 inline void mesureHeartbeatAmplitude() {
-  if (inhibitMeasurement || cyclesWaited++ < 2) return;
-  int beatValue = analogRead(SENSING_PIN);
+  if (inhibitMeasurement || cyclesWaited++ < 4) return;
+  float beatVoltage = analogRead(SENSING_PIN) * 0.0049;
+  //beatVoltage *= beatVoltage > 2.2 ? 1.35 : (beatVoltage > 1.7 ? 1.25 : 1.15);
+  //beatVoltage *= beatVoltage > 2.0 ? 1.457 : 1.15;
   
-  absSampleDiff.addValue((beatValue/1023.0)*5);
-  if (++samplesCount >= 3) {
+  absSampleDiff.addValue(beatVoltage);
+  if (++samplesCount >= 10) {
     lastAmplitude = absSampleDiff.getAverage();
     samplesCount = 0;
     cyclesWaited = 0;
     inhibitMeasurement = true;
   }
 }
+
+volatile bool pulseTriggered = false;
 
 /**
  * Sends a pulse.
@@ -129,52 +140,38 @@ void sendPulse(int length, int scale) {
   analogWrite(PULSING_PIN, scale);
   pulseActive = true;
   remainingPulseLength = length;
-  Serial.println("Pulse triggered");
+  pulseTriggered = true;
+  intCount = freqCtr;
 }
 
 void SEND_PULSE(float ampl) {
   sendPulse(14, (ampl * 255) / 5);
 }
 
+volatile int localBpm = 0;
+
 void PACEMAKER_O_BPM(int bpm) {
-  Serial.print("BPM signal: ");
-  Serial.println(bpm);
+  localBpm = bpm;
 }
 
 void PACEMAKER_O_TIME_OUT() {
   triggerHappened = true;
 }
 
-volatile int lastLocalAmpl = 0;
-volatile bool sportMode = false;
-
 float CALC_AMPL(int iFreq) {
-  float freq = (float) iFreq;
-  
-  float normal = freq * 0.0042 + 0.25;
-  float sport = freq * 0.016 + 1;
-
-  float localAmpl = lastAmplitude;
-  lastLocalAmpl = localAmpl;
-  
-  float diffN = normal - localAmpl;
-  float diffS = sport - localAmpl;
-
-  sportMode = diffS <= diffN;
- 
-  return (diffS > diffN ? normal : sport) - 0.05;
+  return lastAmplitude;
 }
 
-int CALC_BPM(int ticks, int lastBPM) {
-  if (!ticks) return lastBPM;
-  if (triggerHappened) {
-    triggerHappened = false;
-    return lastBPM;
-  }
+int CALC_BPM() {
+   if (lastCount == 0) {
+    return 70;
+   }
 
-  const int newBPM = (60000 / (ticks * 5));
-  
-  return constrain(newBPM, lastBPM - 3, lastBPM + 3);
+   return (12000 / lastCount);
+}
+
+int BPM_TO_FREQ(int bpm) {
+  return (12000 / (bpm - 4)) + 1; 
 }
 
 void loop() {
@@ -187,23 +184,30 @@ void loop() {
   bool lBeat = beatReady;
   
   sei();
-
-  if (triggerHappened) {
+  
+  if (pulseTriggered) {
+    Serial.println("Pulse triggered");
     Serial.print("Last ampl: ");
     Serial.println(lastAmplitude);
+    pulseTriggered = false;
   }
-  
+ 
   if (lBeat) {
     PACEMAKER_I_HEART_BEAT();
-    Serial.print("Beat: ");
-    Serial.println(lastAmplitude);
-    Serial.print("MODE: ");
-    Serial.println(sportMode ? "Sport" : "Normal");
-    Serial.print("Last local ampl: ");
-    Serial.println(lastLocalAmpl);
+    lastHeartbeatTime = millis();
+    lastCount = intCount;
+    intCount = 0;
     beatReady = false;
   }
 
   // Maybe more carful with interrupts here
   PACEMAKER();
+
+  if (lBeat) {   
+    Serial.print("Beat: ");
+    Serial.println(lastAmplitude);
+    Serial.print("BPM signal: ");
+    Serial.println(localBpm);
+    Serial.println();
+  }
 }

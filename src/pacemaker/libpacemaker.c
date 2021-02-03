@@ -56,9 +56,14 @@ static __PACEMAKER_APF *__PACEMAKER_PActionArray;
 extern float CALC_AMPL(integer);
 #endif
 #endif
+#ifndef _BPM_TO_FREQ_DEFINED
+#ifndef BPM_TO_FREQ
+extern integer BPM_TO_FREQ(integer);
+#endif
+#endif
 #ifndef _CALC_BPM_DEFINED
 #ifndef CALC_BPM
-extern integer CALC_BPM(integer ,integer);
+extern integer CALC_BPM();
 #endif
 #endif
 #endif
@@ -83,8 +88,6 @@ static integer __PACEMAKER_V4;
 static float __PACEMAKER_V5;
 static integer __PACEMAKER_V6;
 static integer __PACEMAKER_V7;
-static integer __PACEMAKER_V8;
-static integer __PACEMAKER_V9;
 
 
 /* INPUT FUNCTIONS */
@@ -112,49 +115,41 @@ __PACEMAKER_V2
 
 #define __PACEMAKER_A3 \
 PACEMAKER_O_BPM(__PACEMAKER_V3)
+#define __PACEMAKER_A4 \
+PACEMAKER_O_TIME_OUT()
 
 /* ASSIGNMENTS */
 
-#define __PACEMAKER_A4 \
-__PACEMAKER_V1 = _false
 #define __PACEMAKER_A5 \
-__PACEMAKER_V2 = _false
+__PACEMAKER_V1 = _false
 #define __PACEMAKER_A6 \
-__PACEMAKER_V4 = 70
+__PACEMAKER_V2 = _false
 #define __PACEMAKER_A7 \
-__PACEMAKER_V5 = CALC_AMPL(__PACEMAKER_V4)
+__PACEMAKER_V4 = 70
 #define __PACEMAKER_A8 \
-__PACEMAKER_V4 = __PACEMAKER_V3
+__PACEMAKER_V5 = CALC_AMPL(__PACEMAKER_V4)
 #define __PACEMAKER_A9 \
-__PACEMAKER_V6 = __PACEMAKER_V3
+__PACEMAKER_V4 = __PACEMAKER_V3
 #define __PACEMAKER_A10 \
-__PACEMAKER_V7 = 0
+__PACEMAKER_V6 = BPM_TO_FREQ(__PACEMAKER_V3)
 #define __PACEMAKER_A11 \
-__PACEMAKER_V7 = __PACEMAKER_V7+__PACEMAKER_V0
+__PACEMAKER_V7 = 0
 #define __PACEMAKER_A12 \
-__PACEMAKER_V6 = __PACEMAKER_V3
+__PACEMAKER_V7 = __PACEMAKER_V7+__PACEMAKER_V0
 #define __PACEMAKER_A13 \
-__PACEMAKER_V8 = 70
+__PACEMAKER_V6 = BPM_TO_FREQ(__PACEMAKER_V3)
 #define __PACEMAKER_A14 \
-__PACEMAKER_V9 = 0
-#define __PACEMAKER_A15 \
-__PACEMAKER_V9 = __PACEMAKER_V9+__PACEMAKER_V0
-#define __PACEMAKER_A16 \
-__PACEMAKER_V9 = 0
-#define __PACEMAKER_A17 \
-__PACEMAKER_V8 = CALC_BPM(__PACEMAKER_V9, __PACEMAKER_V8)
-#define __PACEMAKER_A18 \
-__PACEMAKER_V3 = __PACEMAKER_V8
+__PACEMAKER_V3 = CALC_BPM()
 
 /* PROCEDURE CALLS */
 
-#define __PACEMAKER_A19 \
+#define __PACEMAKER_A15 \
 SEND_PULSE(__PACEMAKER_V5)
 
 /* CONDITIONS */
 
-#define __PACEMAKER_A20 \
-__PACEMAKER_V7>((12000/(__PACEMAKER_V6-3))+1)
+#define __PACEMAKER_A16 \
+__PACEMAKER_V7>__PACEMAKER_V6
 
 /* DECREMENTS */
 
@@ -170,13 +165,13 @@ __PACEMAKER_V7>((12000/(__PACEMAKER_V6-3))+1)
 
 /* RESET ACTIONS */
 
-#define __PACEMAKER_A21 \
+#define __PACEMAKER_A17 \
 
-#define __PACEMAKER_A22 \
+#define __PACEMAKER_A18 \
 
-#define __PACEMAKER_A23 \
+#define __PACEMAKER_A19 \
 
-#define __PACEMAKER_A24 \
+#define __PACEMAKER_A20 \
 
 
 /* ACTION SEQUENCES */
@@ -205,9 +200,7 @@ typedef char __SSC_BIT_TYPE;
 
 /* REGISTER VARIABLES */
 
-static __SSC_BIT_TYPE __PACEMAKER_R[10] = {_true,
- _false,
- _false,
+static __SSC_BIT_TYPE __PACEMAKER_R[8] = {_true,
  _false,
  _false,
  _false,
@@ -221,35 +214,35 @@ static __SSC_BIT_TYPE __PACEMAKER_R[10] = {_true,
 int PACEMAKER () {
 /* AUXILIARY VARIABLES */
 
-static __SSC_BIT_TYPE E[32];
-E[0] = __PACEMAKER_R[9]&&!(__PACEMAKER_R[0]);
-E[1] = __PACEMAKER_R[0]&&!((
+static __SSC_BIT_TYPE E[22];
+E[0] = __PACEMAKER_R[0]&&!((
 #ifdef TRACE_ACTION
 fprintf(stderr, "test 1\n"),
 #endif
 __PACEMAKER_A1));
-if (E[1]) {
-__PACEMAKER_A21;
+if (E[0]) {
+__PACEMAKER_A17;
 #ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A21\n");
+fprintf(stderr, "__PACEMAKER_A17\n");
 #endif
 }
 if (__PACEMAKER_R[0]) {
-__PACEMAKER_A22;
+__PACEMAKER_A18;
 #ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A22\n");
+fprintf(stderr, "__PACEMAKER_A18\n");
+#endif
+}
+E[1] = (__PACEMAKER_R[7]&&!(__PACEMAKER_R[0]))||__PACEMAKER_R[0];
+if (__PACEMAKER_R[0]) {
+__PACEMAKER_A7;
+#ifdef TRACE_ACTION
+fprintf(stderr, "__PACEMAKER_A7\n");
 #endif
 }
 if (__PACEMAKER_R[0]) {
-__PACEMAKER_A6;
+__PACEMAKER_A19;
 #ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A6\n");
-#endif
-}
-if (__PACEMAKER_R[0]) {
-__PACEMAKER_A23;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A23\n");
+fprintf(stderr, "__PACEMAKER_A19\n");
 #endif
 }
 E[2] = (__PACEMAKER_R[2]&&!(__PACEMAKER_R[0]))||__PACEMAKER_R[0];
@@ -265,65 +258,11 @@ fprintf(stderr, "test 2\n"),
 #endif
 __PACEMAKER_A2);
 E[5] = E[3]||E[5];
-E[3] = E[0]&&E[5];
-E[6] = __PACEMAKER_R[8]||__PACEMAKER_R[9];
-E[7] = __PACEMAKER_R[8]&&!(__PACEMAKER_R[0]);
-E[8] = __PACEMAKER_R[5]&&!(__PACEMAKER_R[0]);
-E[9] = E[8]&&(
-#ifdef TRACE_ACTION
-fprintf(stderr, "test 1\n"),
-#endif
-__PACEMAKER_A1);
-if (E[9]) {
-__PACEMAKER_A11;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A11\n");
-#endif
-}
-E[10] = E[9]&&(
-#ifdef TRACE_ACTION
-fprintf(stderr, "test 20\n"),
-#endif
-__PACEMAKER_A20);
-E[11] = E[7]&&E[10];
-if (E[11]) {
-__PACEMAKER_A16;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A16\n");
-#endif
-}
-E[7] = __PACEMAKER_R[8]&&E[7]&&!(E[10]);
-E[12] = E[7]&&(
-#ifdef TRACE_ACTION
-fprintf(stderr, "test 1\n"),
-#endif
-__PACEMAKER_A1);
-if (E[12]) {
-__PACEMAKER_A15;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A15\n");
-#endif
-}
-E[7] = E[7]&&!((
-#ifdef TRACE_ACTION
-fprintf(stderr, "test 1\n"),
-#endif
-__PACEMAKER_A1));
-E[7] = E[11]||E[12]||(__PACEMAKER_R[8]&&E[7]);
-E[13] = (E[6]&&!(__PACEMAKER_R[8]))||E[7];
-E[0] = __PACEMAKER_R[9]&&E[0]&&!(E[5]);
-E[14] = (E[6]&&!(__PACEMAKER_R[9]))||E[0];
-E[3] = E[3]&&E[13]&&(E[14]||E[3]);
+E[3] = E[1]&&E[5];
 if (E[3]) {
-__PACEMAKER_A17;
+__PACEMAKER_A14;
 #ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A17\n");
-#endif
-}
-if (E[3]) {
-__PACEMAKER_A18;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A18\n");
+fprintf(stderr, "__PACEMAKER_A14\n");
 #endif
 }
 if (E[3]) {
@@ -332,122 +271,120 @@ __PACEMAKER_A3;
 fprintf(stderr, "__PACEMAKER_A3\n");
 #endif
 }
+E[6] = __PACEMAKER_R[5]&&!(__PACEMAKER_R[0]);
+E[7] = __PACEMAKER_R[5]&&E[6]&&!(E[5]);
+E[8] = E[7]&&(
+#ifdef TRACE_ACTION
+fprintf(stderr, "test 1\n"),
+#endif
+__PACEMAKER_A1);
+if (E[8]) {
+__PACEMAKER_A12;
+#ifdef TRACE_ACTION
+fprintf(stderr, "__PACEMAKER_A12\n");
+#endif
+}
+E[9] = E[8]&&(
+#ifdef TRACE_ACTION
+fprintf(stderr, "test 16\n"),
+#endif
+__PACEMAKER_A16);
+if (E[9]) {
+__PACEMAKER_A4;
+#ifdef TRACE_ACTION
+fprintf(stderr, "__PACEMAKER_A4\n");
+#endif
+}
 E[4] = E[4]&&!((
 #ifdef TRACE_ACTION
 fprintf(stderr, "test 2\n"),
 #endif
 __PACEMAKER_A2));
 E[4] = __PACEMAKER_R[1]&&E[4];
-E[15] = E[4]&&E[10];
-if (E[15]) {
-__PACEMAKER_A7;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A7\n");
-#endif
-}
-E[16] = !(_true);
-E[17] = (__PACEMAKER_R[3]&&!(__PACEMAKER_R[0]))||__PACEMAKER_R[0];
-E[18] = E[17]&&E[15];
-if (E[18]) {
-__PACEMAKER_A19;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A19\n");
-#endif
-}
-E[17] = E[18]||(E[17]&&!(E[15]));
-E[19] = E[5]&&E[3];
-if (E[19]) {
+E[10] = E[4]&&E[9];
+if (E[10]) {
 __PACEMAKER_A8;
 #ifdef TRACE_ACTION
 fprintf(stderr, "__PACEMAKER_A8\n");
 #endif
 }
-E[20] = E[19]||(E[5]&&!(E[3]))||E[15];
-E[2] = E[2]&&!((
+E[11] = !(_true);
+E[12] = (__PACEMAKER_R[3]&&!(__PACEMAKER_R[0]))||__PACEMAKER_R[0];
+E[13] = E[12]&&E[10];
+if (E[13]) {
+__PACEMAKER_A15;
 #ifdef TRACE_ACTION
-fprintf(stderr, "test 2\n"),
-#endif
-__PACEMAKER_A2));
-E[4] = E[2]||(__PACEMAKER_R[1]&&E[4]&&!(E[10]));
-E[2] = __PACEMAKER_R[2]||__PACEMAKER_R[1];
-E[21] = __PACEMAKER_R[3]||E[2];
-E[2] = (E[17]||E[20]||E[4])&&((E[21]&&!(__PACEMAKER_R[3]))||E[17])&&((E[21]&&!(E[2]))||E[20]||E[4]);
-if (__PACEMAKER_R[0]) {
-__PACEMAKER_A24;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A24\n");
+fprintf(stderr, "__PACEMAKER_A15\n");
 #endif
 }
-E[22] = __PACEMAKER_R[4]&&!(__PACEMAKER_R[0]);
-E[23] = (__PACEMAKER_R[0]&&E[3])||(E[22]&&E[3]);
-if (E[23]) {
+E[12] = E[13]||(E[12]&&!(E[10]));
+E[14] = E[5]&&E[3];
+if (E[14]) {
 __PACEMAKER_A9;
 #ifdef TRACE_ACTION
 fprintf(stderr, "__PACEMAKER_A9\n");
 #endif
 }
-E[24] = E[23]||(__PACEMAKER_R[7]&&!(__PACEMAKER_R[0]));
-if (E[24]) {
+E[15] = E[14]||(E[5]&&!(E[3]))||E[10];
+E[2] = E[2]&&!((
+#ifdef TRACE_ACTION
+fprintf(stderr, "test 2\n"),
+#endif
+__PACEMAKER_A2));
+E[4] = E[2]||(__PACEMAKER_R[1]&&E[4]&&!(E[9]));
+E[2] = __PACEMAKER_R[2]||__PACEMAKER_R[1];
+E[16] = __PACEMAKER_R[3]||E[2];
+E[2] = (E[12]||E[15]||E[4])&&((E[16]&&!(__PACEMAKER_R[3]))||E[12])&&((E[16]&&!(E[2]))||E[15]||E[4]);
+if (__PACEMAKER_R[0]) {
+__PACEMAKER_A20;
+#ifdef TRACE_ACTION
+fprintf(stderr, "__PACEMAKER_A20\n");
+#endif
+}
+E[17] = __PACEMAKER_R[4]&&!(__PACEMAKER_R[0]);
+E[18] = (__PACEMAKER_R[0]&&E[3])||(E[17]&&E[3]);
+if (E[18]) {
 __PACEMAKER_A10;
 #ifdef TRACE_ACTION
 fprintf(stderr, "__PACEMAKER_A10\n");
 #endif
 }
-E[8] = E[8]&&!((
+E[19] = E[18]||(__PACEMAKER_R[6]&&!(__PACEMAKER_R[0]));
+if (E[19]) {
+__PACEMAKER_A11;
 #ifdef TRACE_ACTION
-fprintf(stderr, "test 1\n"),
-#endif
-__PACEMAKER_A1));
-E[8] = E[24]||(E[9]&&!(E[10]))||(__PACEMAKER_R[5]&&E[8]);
-E[25] = __PACEMAKER_R[6]&&!(__PACEMAKER_R[0]);
-E[26] = (E[24]&&!(E[5]))||(__PACEMAKER_R[6]&&E[25]&&!(E[5]));
-E[27] = __PACEMAKER_R[5]||__PACEMAKER_R[6];
-E[28] = (E[27]&&!(__PACEMAKER_R[5]))||E[8];
-E[29] = (E[27]&&!(__PACEMAKER_R[6]))||E[26];
-E[30] = (E[8]||E[26])&&E[28]&&E[29];
-E[31] = E[24]&&E[5];
-E[5] = E[25]&&E[5];
-E[28] = E[28]||E[10];
-E[5] = (E[31]||E[5])&&E[28]&&(E[29]||E[31]||E[5]);
-if (E[5]) {
-__PACEMAKER_A12;
-#ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A12\n");
+fprintf(stderr, "__PACEMAKER_A11\n");
 #endif
 }
-E[29] = E[10]&&E[28]&&E[29];
-E[28] = E[5]||E[29];
-E[22] = (__PACEMAKER_R[0]&&!(E[3]))||(__PACEMAKER_R[4]&&E[22]&&!(E[3]));
-if (__PACEMAKER_R[0]) {
+E[6] = (E[19]&&E[5])||(E[6]&&E[5]);
+if (E[6]) {
 __PACEMAKER_A13;
 #ifdef TRACE_ACTION
 fprintf(stderr, "__PACEMAKER_A13\n");
 #endif
 }
-E[10] = __PACEMAKER_R[0]||E[3];
-if (E[10]) {
-__PACEMAKER_A14;
+E[20] = E[6]||E[9];
+E[7] = E[7]&&!((
 #ifdef TRACE_ACTION
-fprintf(stderr, "__PACEMAKER_A14\n");
+fprintf(stderr, "test 1\n"),
 #endif
-}
-E[14] = (E[7]||E[0])&&E[13]&&E[14];
-E[27] = __PACEMAKER_R[7]||E[27]||__PACEMAKER_R[4];
-E[13] = E[21]||E[27]||E[6];
-E[14] = (E[2]||E[30]||E[28]||E[22]||E[10]||E[14])&&((E[13]&&!(E[21]))||E[2])&&((E[13]&&!(E[27]))||E[30]||E[28]||E[22])&&((E[13]&&!(E[6]))||E[10]||E[14]);
-E[29] = E[5]||E[29];
-__PACEMAKER_R[5] = E[8]&&!(E[29]);
-__PACEMAKER_R[6] = E[26]&&!(E[29]);
-__PACEMAKER_R[8] = E[10]||(E[7]&&!(E[3]));
-__PACEMAKER_R[9] = E[10]||(E[0]&&!(E[3]));
+__PACEMAKER_A1));
+E[7] = (E[19]&&!(E[5]))||(E[8]&&!(E[9]))||(__PACEMAKER_R[5]&&E[7]);
+E[17] = (__PACEMAKER_R[0]&&!(E[3]))||(__PACEMAKER_R[4]&&E[17]&&!(E[3]));
+E[5] = E[3]||(E[1]&&!(E[5]));
+E[1] = __PACEMAKER_R[6]||__PACEMAKER_R[5]||__PACEMAKER_R[4];
+E[21] = E[16]||E[1]||__PACEMAKER_R[7];
+E[21] = (E[2]||E[20]||E[7]||E[17]||E[5])&&((E[21]&&!(E[16]))||E[2])&&((E[21]&&!(E[1]))||E[20]||E[7]||E[17])&&((E[21]&&!(__PACEMAKER_R[7]))||E[5]);
 __PACEMAKER_R[0] = !(_true);
 __PACEMAKER_R[1] = E[4];
-__PACEMAKER_R[2] = E[20];
-__PACEMAKER_R[3] = E[17];
-__PACEMAKER_R[4] = E[22];
-__PACEMAKER_R[7] = E[28];
+__PACEMAKER_R[2] = E[15];
+__PACEMAKER_R[3] = E[12];
+__PACEMAKER_R[4] = E[17];
+__PACEMAKER_R[5] = E[7];
+__PACEMAKER_R[6] = E[20];
+__PACEMAKER_R[7] = E[5];
 __PACEMAKER__reset_input();
-return E[14];
+return E[21];
 }
 
 /* AUTOMATON RESET */
@@ -461,8 +398,6 @@ __PACEMAKER_R[4] = _false;
 __PACEMAKER_R[5] = _false;
 __PACEMAKER_R[6] = _false;
 __PACEMAKER_R[7] = _false;
-__PACEMAKER_R[8] = _false;
-__PACEMAKER_R[9] = _false;
 __PACEMAKER__reset_input();
 return 0;
 }

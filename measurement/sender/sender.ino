@@ -14,16 +14,14 @@ void setup() {
                                                    // COM = 10 aktiviert nichtinvertierende PWM
   TCCR2B = _BV(CS22);   //Prescaler = 
   OCR2A = 180;    //Output compare Wert
-
-  sendMeasurements();
 }
 
 void sendMeasurements() {
 
   const float base = 0.4;
   const float multiplier = 0.2;
-
-  for (int i = 0; i < 19; i++) {
+  
+  for (int i = 0; i < 23; i++) {
       sendPulse(base + i * multiplier);
   }
   
@@ -33,11 +31,18 @@ const int vToI = 255 / 5;
 
 void sendPulse(float voltage) {
   analogWrite(pulseOut1, voltage * vToI);
-  delay(100);
-  digitalWrite(pulseOut1, LOW);
+  Serial.print("Voltage: ");
+  Serial.println(voltage);
+  delay(300);
+  analogWrite(pulseOut1, 0);
+  delay(50);
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+volatile bool done = false;
 
+void loop() {
+  if (!done) {
+    sendMeasurements();
+    done = true;
+  }
 }

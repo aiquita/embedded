@@ -1,23 +1,24 @@
 module TIMEOUT:
     input INT(integer), BPM(integer), RESET;
     relation RESET => BPM;
+	function BPM_TO_FREQ(integer) : integer;
     output TIME_OUT;
     var lastBPM : integer in
         await immediate BPM;
-        lastBPM := ?BPM;
+        lastBPM := BPM_TO_FREQ(?BPM);
         loop
             var passed := 0 : integer in
-                weak abort
+                abort
                 trap TOUT in
                     every INT do
                         passed := passed + ?INT;
-                        if passed > ((12000 / (lastBPM - 3)) + 1) 
+                        if passed > lastBPM
                             then emit TIME_OUT; exit TOUT 
                         end
                     end
                 end trap;
                 when immediate RESET do
-                    lastBPM := ?BPM;
+                    lastBPM := BPM_TO_FREQ(?BPM);
                 end abort;
             end var;
             pause

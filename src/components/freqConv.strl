@@ -1,19 +1,9 @@
 module FREQ_CONV:
-    input RESET, INT(integer), TIME_OUT; %Interrupt at 200Hz
+    input RESET; %Interrupt at 200Hz
     output BPM(integer);
-    function CALC_BPM(integer, integer) : integer;
-    var lastBPM := 70 : integer in
-        loop
-            var ticks := 0 : integer in 
-                weak abort
-					every INT do
-						ticks := ticks + ?INT
-					end
-                when RESET do
-                    lastBPM := CALC_BPM(ticks, lastBPM);
-                    emit BPM(lastBPM)
-                end abort;
-            end
-        end loop
-    end var
+    function CALC_BPM() : integer;
+	loop
+		present RESET then emit BPM(CALC_BPM()) end;
+		pause
+	end
 end module
