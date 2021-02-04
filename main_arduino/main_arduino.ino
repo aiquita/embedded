@@ -4,7 +4,7 @@
 
 extern "C" { 
   void SEND_PULSE(float);
-  float CALC_AMPL(int);
+  float CALC_AMPL();
   int CALC_BPM();
   int BPM_TO_FREQ(int);
 }
@@ -29,7 +29,9 @@ volatile boolean triggerHappened = false;
 
 volatile int freqCtr = 0;
 
+// Heartbeat Variables
 volatile long lastHeartbeatTime = 0;
+volatile unsigned int currentBPM = 70;
 
 RunningAverage absSampleDiff(20);
 volatile int cyclesWaited = 0;
@@ -87,6 +89,14 @@ inline void terminatePulseIfRequired() {
 }
 
 /**
+ * Update the BPM
+ */
+inline void updateBPM() {
+  currentBPM = (12000 / intCount);
+  intCount = 0;
+}
+
+/**
  * Senses for a heartbeat.
  * 
  * Sensing uses a threshold of 5 in order to ignore arbitrary fluctuations.
@@ -103,6 +113,7 @@ inline void senseForHeartbeat() {
       freqCtr = 0;
       return;
     }
+    updateBPM();
     beatReady = true;
   }
   if (beatValue < 20 && inhibitPeek) {
@@ -141,24 +152,21 @@ void sendPulse(int length, int scale) {
   pulseActive = true;
   remainingPulseLength = length;
   pulseTriggered = true;
-  intCount = freqCtr;
 }
 
 void SEND_PULSE(float ampl) {
   sendPulse(14, (ampl * 255) / 5);
 }
 
-volatile int localBpm = 0;
-
-void PACEMAKER_O_BPM(int bpm) {
-  localBpm = bpm;
-}
-
 void PACEMAKER_O_TIME_OUT() {
+  // Maybe overkill
+  int pacedBPM = (intCount / 12000);
+  int correction = (12000 / pacedBPM) - (12000 / currentBPM);
+  intCount = correction;
   triggerHappened = true;
 }
 
-float CALC_AMPL(int iFreq) {
+float CALC_AMPL() {
   return lastAmplitude;
 }
 
@@ -189,6 +197,9 @@ void loop() {
     Serial.println("Pulse triggered");
     Serial.print("Last ampl: ");
     Serial.println(lastAmplitude);
+    Serial.print("BPM: ");
+    Serial.println(currentBPM);
+    Serial.println();
     pulseTriggered = false;
   }
  
@@ -206,8 +217,8 @@ void loop() {
   if (lBeat) {   
     Serial.print("Beat: ");
     Serial.println(lastAmplitude);
-    Serial.print("BPM signal: ");
-    Serial.println(localBpm);
+    Serial.print("BPM: ");
+    Serial.println(currentBPM);
     Serial.println();
   }
 }
