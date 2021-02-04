@@ -1,8 +1,7 @@
 module COORDINATOR:
     output RESET;
-    input HEART_BEAT, TIME_OUT, BPM(integer);
-    function CALC_AMPL (integer) : float;
-    var lastBPM := 70 : integer in 
+    input HEART_BEAT, TIME_OUT;
+    function CALC_AMPL () : float;
     loop
         signal TRIGGER(float) in
             run PULSE_TRIGGER
@@ -10,17 +9,13 @@ module COORDINATOR:
             loop
                 abort
                     await TIME_OUT;
-                    emit TRIGGER(CALC_AMPL(lastBPM));
+                    emit TRIGGER(CALC_AMPL());
                 when immediate HEART_BEAT do
                     emit RESET;
-                    present(BPM) then
-                        lastBPM := ?BPM
-                    end
                 end abort;
                 pause
             end loop
         end signal;
         pause
     end loop
-    end var
 end module

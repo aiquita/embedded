@@ -1,9 +1,0 @@
-module FREQ_CONV:
-    input RESET; %Interrupt at 200Hz
-    output BPM(integer);
-    function CALC_BPM() : integer;
-	loop
-		present RESET then emit BPM(CALC_BPM()) end;
-		pause
-	end
-end module
