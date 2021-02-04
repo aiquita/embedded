@@ -4,7 +4,7 @@
 
 extern "C" { 
   void SEND_PULSE(float);
-  float CALC_AMPL(int);
+  float CALC_AMPL();
   int CALC_BPM();
   int BPM_TO_FREQ(int);
 }
@@ -29,7 +29,9 @@ volatile boolean triggerHappened = false;
 
 volatile int freqCtr = 0;
 
+// Heartbeat Variables
 volatile long lastHeartbeatTime = 0;
+volatile unsigned int currentBPM = 70;
 
 RunningAverage absSampleDiff(20);
 volatile int cyclesWaited = 0;
@@ -77,6 +79,28 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 /**
+ * Terminates a pulse if its time length exceeded.
+ */
+inline void terminatePulseIfDurationExceeded() {
+  if (pulseActive) {
+    remainingPulseLength--;
+    
+    if (remainingPulseLength == 0) {
+      pulseActive = false;
+      analogWrite(PULSING_PIN, 0);
+    }
+  }
+}
+
+/**
+ * Update the BPM
+ */
+inline void updateBPM() {
+  currentBPM = (12000 / intCount);
+  intCount = 0;
+}
+
+/**
  * Senses for a heartbeat.
  * 
  * Sensing uses a threshold of 5 in order to ignore arbitrary fluctuations.
@@ -92,6 +116,7 @@ inline void senseForHeartbeat() {
       freqCtr = 0;
       return;
     }
+    updateBPM();
     beatReady = true;
   }
 }
@@ -144,36 +169,20 @@ void sendPulse(int length, int scale) {
   pulseTriggered = true; // if pulseTriggered is true serial print is triggered in loop() 
 }
 
-/**
- * Terminates a pulse if its time length exceeded.
- */
-inline void terminatePulseIfDurationExceeded() {
-  if (pulseActive) {
-    remainingPulseLength--;
-    
-    if (remainingPulseLength == 0) {
-      pulseActive = false;
-      analogWrite(PULSING_PIN, 0);
-    }
-  }
-}
-
 void SEND_PULSE(float ampl) {
   sendPulse(14, (ampl * 255) / 5);
   intCount = freqCtr;
 }
 
-volatile int localBpm = 0;
-
-void PACEMAKER_O_BPM(int bpm) {
-  localBpm = bpm;
-}
-
 void PACEMAKER_O_TIME_OUT() {
+  // Maybe overkill
+  int pacedBPM = (intCount / 12000);
+  int correction = (12000 / pacedBPM) - (12000 / currentBPM);
+  intCount = correction;
   triggerHappened = true;
 }
 
-float CALC_AMPL(int iFreq) {
+float CALC_AMPL() {
   return lastAmplitude;
 }
 
@@ -215,14 +224,17 @@ void loop() {
     Serial.println("Pulse triggered");
     Serial.print("Last ampl: ");
     Serial.println(lastAmplitude);
+	Serial.print("BPM: ");
+    Serial.println(currentBPM);
+    Serial.println();
     pulseTriggered = false;
   }
 
   if (lBeat) {   
     Serial.print("Beat: ");
     Serial.println(lastAmplitude);
-    Serial.print("BPM signal: ");
-    Serial.println(localBpm);
+    Serial.print("BPM: ");
+    Serial.println(currentBPM);
     Serial.println();
   }
 }
