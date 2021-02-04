@@ -16,7 +16,7 @@ const int SENSING_PIN = A1;
 
 /* Global variables */ 
 
-volatile boolean firstHeartbeatFound = false;
+volatile int firstHeartbeatFound = 0;
 
 volatile boolean insideSignal = false;
 volatile boolean inhibitMeasurement = false;
@@ -68,7 +68,6 @@ void setupInterrupts() {
 }
 
 volatile long intCount = 0;
-volatile long lastCount = 0;
 
 ISR(TIMER1_COMPA_vect) {
   terminatePulseIfDurationExceeded();
@@ -96,7 +95,13 @@ inline void terminatePulseIfDurationExceeded() {
  * Update the BPM
  */
 inline void updateBPM() {
-  currentBPM = (12000 / intCount);
+  if (triggerHappened) {
+    Serial.println((24000 / intCount));
+    currentBPM = constrain((24000 / intCount), 60, 200);
+    triggerHappened = false;
+  } else {
+    currentBPM = constrain((12000 / intCount), 60, 200);
+  }
   intCount = 0;
 }
 
@@ -111,9 +116,11 @@ inline void senseForHeartbeat() {
   if (isRisingEdge(beatValue)) {
     inhibitMeasurement = false;
     absSampleDiff.clear();
-    if (!firstHeartbeatFound && lastAmplitude > 1){
-      firstHeartbeatFound = true;
+    if (firstHeartbeatFound < 2 && lastAmplitude > 1){
+      firstHeartbeatFound++;
+      updateBPM();
       freqCtr = 0;
+      intCount = 0;
       return;
     }
     updateBPM();
@@ -136,6 +143,7 @@ inline bool isRisingEdge(int value) {
   if (value < 20 && insideSignal) {
     insideSignal = false;
   }
+  return false;
 }
 
 /**
@@ -171,14 +179,11 @@ void sendPulse(int length, int scale) {
 
 void SEND_PULSE(float ampl) {
   sendPulse(14, (ampl * 255) / 5);
-  intCount = freqCtr;
 }
 
 void PACEMAKER_O_TIME_OUT() {
   // Maybe overkill
-  int pacedBPM = (intCount / 12000);
-  int correction = (12000 / pacedBPM) - (12000 / currentBPM);
-  intCount = correction;
+  //int correction = intCount - (12000 / currentBPM);
   triggerHappened = true;
 }
 
@@ -187,11 +192,7 @@ float CALC_AMPL() {
 }
 
 int CALC_BPM() {
-   if (lastCount == 0) {
-    return 70;
-   }
-
-   return (12000 / lastCount);
+   return currentBPM;
 }
 
 int BPM_TO_FREQ(int bpm) {
@@ -199,7 +200,7 @@ int BPM_TO_FREQ(int bpm) {
 }
 
 void loop() {
-  if (!firstHeartbeatFound) return; // inibits behavior in setup phase of the heart
+  if (firstHeartbeatFound < 2) return; // inibits behavior in setup phase of the heart
   
   cli();
   
@@ -212,8 +213,6 @@ void loop() {
   if (lBeat) {
     PACEMAKER_I_HEART_BEAT();
     lastHeartbeatTime = millis();
-    lastCount = intCount;
-    intCount = 0;
     beatReady = false;
   }
 
@@ -224,7 +223,7 @@ void loop() {
     Serial.println("Pulse triggered");
     Serial.print("Last ampl: ");
     Serial.println(lastAmplitude);
-	Serial.print("BPM: ");
+	  Serial.print("BPM: ");
     Serial.println(currentBPM);
     Serial.println();
     pulseTriggered = false;
