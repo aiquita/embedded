@@ -2,7 +2,9 @@
 #include "stdio.h"
 #include "RunningAverage.h"
 
-extern "C" { 
+#define modus5 true
+
+extern "C" {
   void SEND_PULSE(float);
   float CALC_AMPL();
   int CALC_BPM();
@@ -14,7 +16,7 @@ extern "C" {
 const int PULSING_PIN = 6; // used for analog write
 const int SENSING_PIN = A1;
 
-/* Global variables */ 
+/* Global variables */
 
 volatile int firstHeartbeatFound = 0;
 
@@ -46,10 +48,10 @@ void setup() {
 
   pinMode(PULSING_PIN, OUTPUT);
   TCCR2A = _BV(COM2A1)  | _BV(WGM21) | _BV(WGM20);
-  TCCR2B = _BV(CS22); 
+  TCCR2B = _BV(CS22);
   OCR2A = 180;
-  
-  setupInterrupts();  
+
+  setupInterrupts();
 }
 
 void setupInterrupts() {
@@ -78,12 +80,12 @@ ISR(TIMER1_COMPA_vect) {
 }
 
 /**
- * Terminates a pulse if its time length exceeded.
- */
+   Terminates a pulse if its time length exceeded.
+*/
 inline void terminatePulseIfDurationExceeded() {
   if (pulseActive) {
     remainingPulseLength--;
-    
+
     if (remainingPulseLength == 0) {
       pulseActive = false;
       analogWrite(PULSING_PIN, 0);
@@ -92,8 +94,8 @@ inline void terminatePulseIfDurationExceeded() {
 }
 
 /**
- * Update the BPM
- */
+   Update the BPM
+*/
 inline void updateBPM() {
   if (triggerHappened) {
     Serial.println((24000 / intCount));
@@ -106,17 +108,17 @@ inline void updateBPM() {
 }
 
 /**
- * Senses for a heartbeat.
- * 
- * Sensing uses a threshold of 5 in order to ignore arbitrary fluctuations.
- * Sensing is inhibited until amplitued drops under 5 again.
- */
+   Senses for a heartbeat.
+
+   Sensing uses a threshold of 5 in order to ignore arbitrary fluctuations.
+   Sensing is inhibited until amplitued drops under 5 again.
+*/
 inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
   if (isRisingEdge(beatValue)) {
     inhibitMeasurement = false;
     absSampleDiff.clear();
-    if (firstHeartbeatFound < 2 && lastAmplitude > 1){
+    if (firstHeartbeatFound < 2 && lastAmplitude > 1) {
       firstHeartbeatFound++;
       updateBPM();
       freqCtr = 0;
@@ -129,12 +131,12 @@ inline void senseForHeartbeat() {
 }
 
 /**
- * Decides whether the given value represents a rising edge.
- * 
- * Values lower than 20 are omitted because they are assumed to be arbitrary fluctuations.
- * The function assumes value to be a falling edge if it drops under 20 and a signal was
- * present before.
- */
+   Decides whether the given value represents a rising edge.
+
+   Values lower than 20 are omitted because they are assumed to be arbitrary fluctuations.
+   The function assumes value to be a falling edge if it drops under 20 and a signal was
+   present before.
+*/
 inline bool isRisingEdge(int value) {
   if (value >= 20 && !insideSignal) {
     insideSignal = true;
@@ -147,14 +149,20 @@ inline bool isRisingEdge(int value) {
 }
 
 /**
- * Mesures the hearbeat by average of three samples.
- */
+   Mesures the hearbeat by average of three samples.
+*/
 inline void mesureHeartbeatAmplitude() {
   if (inhibitMeasurement || cyclesWaited++ < 4) return;
   float beatVoltage = analogRead(SENSING_PIN) * 0.0049;
-  //beatVoltage *= beatVoltage > 2.2 ? 1.35 : (beatVoltage > 1.7 ? 1.25 : 1.15);
-  //beatVoltage *= beatVoltage > 2.0 ? 1.457 : 1.15;
-  
+
+  if (modus5) {
+    beatVoltage += beatVoltage > 2.3 ? 0.15 : 0.1;
+    beatVoltage += beatVoltage > 2.7 ? 0.1 : 0;
+    beatVoltage += beatVoltage > 3.8 ? 0.1 : 0;
+  } else {
+    beatVoltage += 0.15;
+  }
+
   absSampleDiff.addValue(beatVoltage);
   if (++samplesCount >= 10) {
     lastAmplitude = absSampleDiff.getAverage();
@@ -165,16 +173,16 @@ inline void mesureHeartbeatAmplitude() {
 }
 
 /**
- * Sends a pulse.
- * 
- * length: Duration in millis is calculated by 5 * length. 
- * scale: Between 0 and 255.
- */
+   Sends a pulse.
+
+   length: Duration in millis is calculated by 5 * length.
+   scale: Between 0 and 255.
+*/
 void sendPulse(int length, int scale) {
   analogWrite(PULSING_PIN, scale);
   pulseActive = true;
   remainingPulseLength = length;
-  pulseTriggered = true; // if pulseTriggered is true serial print is triggered in loop() 
+  pulseTriggered = true; // if pulseTriggered is true serial print is triggered in loop()
 }
 
 void SEND_PULSE(float ampl) {
@@ -182,8 +190,6 @@ void SEND_PULSE(float ampl) {
 }
 
 void PACEMAKER_O_TIME_OUT() {
-  // Maybe overkill
-  //int correction = intCount - (12000 / currentBPM);
   triggerHappened = true;
 }
 
@@ -192,24 +198,24 @@ float CALC_AMPL() {
 }
 
 int CALC_BPM() {
-   return currentBPM;
+  return currentBPM;
 }
 
 int BPM_TO_FREQ(int bpm) {
-  return (12000 / (bpm - 4)) + 1; 
+  return (12000 / (bpm - 4)) + 1;
 }
 
 void loop() {
   if (firstHeartbeatFound < 2) return; // inibits behavior in setup phase of the heart
-  
+
   cli();
-  
+
   PACEMAKER_I_INT(freqCtr);
   freqCtr = 0;
   bool lBeat = beatReady;
-  
+
   sei();
-  
+
   if (lBeat) {
     PACEMAKER_I_HEART_BEAT();
     lastHeartbeatTime = millis();
@@ -223,13 +229,13 @@ void loop() {
     Serial.println("Pulse triggered");
     Serial.print("Last ampl: ");
     Serial.println(lastAmplitude);
-	  Serial.print("BPM: ");
+    Serial.print("BPM: ");
     Serial.println(currentBPM);
     Serial.println();
     pulseTriggered = false;
   }
 
-  if (lBeat) {   
+  if (lBeat) {
     Serial.print("Beat: ");
     Serial.println(lastAmplitude);
     Serial.print("BPM: ");

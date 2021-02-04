@@ -35,6 +35,8 @@
 #define alive 1
 #define dead 2
 
+#define referenceVoltage 5
+
 //Programmvariablen
 unsigned long pulseStart = 0;
 volatile int analogValue = 0;
@@ -135,8 +137,6 @@ ISR(TIMER1_COMPA_vect){     //Frequenz dieses Interrupts: 200Hz
   }
 }
 
-
-
 void sendPulse(){
   /* In dieser Methode wird ein Herzschlag erzeugt.
    * Es wird die PWM-Funktion analogWrite verwendet,
@@ -146,7 +146,7 @@ void sendPulse(){
    * in einen analogen Wert umgewandelt.
    */
   unsigned long int sendRef = millis();
-  analogWrite(pulseOut1, (ampl*255)/5);    //Herzschlag wird als PWM-Signal ausggeben.
+  analogWrite(pulseOut1, (ampl*255)/referenceVoltage);    //Herzschlag wird als PWM-Signal ausggeben.
   digitalWrite(pulseLed1, HIGH);//LED zeigt Herzschlag an
   while(millis()-sendRef < pulseDur){ //pulseDur in ms warten, waehrenddessen ueberpruefen
     if(analogValue > impulseThreshold){          //ob vom Schrittmacher faelschlicherweise
@@ -188,7 +188,7 @@ void changeFreq(int cF){
     freq = freq + cF;       //Herzfrequenz anpassen
     freq = constrain(freq, minHeartrate, maxHeartrate);   //Haelt die Herzfrequenz im Bereich 60-180bpm
     freqComp = 12000/freq;      //Umrechnung fuer Timer-Interrupt
-    ampl = freq*0.016 + 1;      //Amplitude proportional zu Frequenz(2-4V)
+    ampl = (freq*0.016 + 1) * (referenceVoltage/5.0);      //Amplitude proportional zu Frequenz(2-4V)
     //ampl = freq*0.0042 +0.25;   //Amplitude proportional zu Frequenz
     interrupts();
     Serial.println("Frequenz:");
@@ -296,38 +296,40 @@ void waitForImp(){
   patState = dead;
   //Serial.println("Auf Schrittmacher warten");
   long diff = 0;
-  while( (diff = millis() - waitRef) <= maxDelay +1000 ){  //Pruefung der zeitl. Toleranzen
+  while( (diff = millis() - waitRef) <= maxDelay +15 ){  //Pruefung der zeitl. Toleranzen
     if(analogValue > impulseThreshold){    //"Hardware-Interrupt" registriert eingehenden Impuls
       //Serial.println("Impuls angekommen");
       impTime = millis();
       delay(sampleDelay);    //die Anstiegszeit tau=10ms abwarten, um den richtigen Wert zu samplen
       absSampleDiff.clear();
       for(int i = 0; i < 6; i++){   //Mittelwert von 3 Samples bilden, um PWM-Zacken im Analogsignal zu kompensieren
-        float tempSample1 = (analogValue/1023.0)*5 - ampl;
-        float tempSample2 = fabs(tempSample1);    //tempSample2 ist die Differenz zwischen Ist- und Sollwert der Amplitude
-        absSampleDiff.addValue(tempSample2);
+        float tempSample1 = (analogValue/1023.0)*referenceVoltage;
+        //float tempSample2 = fabs(tempSample1);    //tempSample2 ist die Differenz zwischen Ist- und Sollwert der Amplitude        
+        absSampleDiff.addValue(tempSample1);
         delay(2);
       }
       Serial.println(absSampleDiff.getAverage());
       Serial.print("Imp Recieved after: ");
       Serial.println(diff);
-      if(absSampleDiff.getAverage() <= amplTolerance){    //Toleranz von +- 0,15V
+      if(fabs(absSampleDiff.getAverage() - ampl) <= amplTolerance){    //Toleranz von +- 0,15V
         patState = alive;       //Impuls vom HS wurde innerhalb der Toleranzen gesendet
         saved = 1;
         break;
       }else{
         Serial.print("Impulsamplitude nicht korrekt: ");
+        Serial.println(fabs(absSampleDiff.getAverage() - ampl));
+        Serial.print("Expected:");
+        Serial.println(ampl);
+        Serial.print("Received:");
         Serial.println(absSampleDiff.getAverage());
-        // break;
+        break;
       }
-      patState = alive;   //Fuer Debugging ohne Beruecksichtigung der Amplitude
-      saved = 1;
-      break;
+      //patState = alive;   //Fuer Debugging ohne Beruecksichtigung der Amplitude
+      //saved = 1;
+      //break;
     }    
   }
 
- 
-  
   if(saved == 1){
     Serial.println("Yippie!");
     //Serial.println(impTime - waitRef);
