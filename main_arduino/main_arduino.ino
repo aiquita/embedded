@@ -18,7 +18,7 @@ const int SENSING_PIN = A1;
 
 volatile boolean firstHeartbeatFound = false;
 
-volatile boolean inhibitPeek = false;
+volatile boolean insideSignal = false;
 volatile boolean inhibitMeasurement = false;
 volatile boolean beatReady = false;
 volatile float lastAmplitude = 0;
@@ -34,6 +34,10 @@ volatile long lastHeartbeatTime = 0;
 RunningAverage absSampleDiff(20);
 volatile int cyclesWaited = 0;
 volatile int samplesCount = 0;
+
+/* used to manage debugging */
+
+volatile bool pulseTriggered = false;
 
 void setup() {
   Serial.begin(9600);
@@ -65,25 +69,11 @@ volatile long intCount = 0;
 volatile long lastCount = 0;
 
 ISR(TIMER1_COMPA_vect) {
-  terminatePulseIfRequired();
+  terminatePulseIfDurationExceeded();
   senseForHeartbeat();
   mesureHeartbeatAmplitude();
   freqCtr++;
   intCount++;
-}
-
-/**
- * Terminates a pulse if its time length exceeded.
- */
-inline void terminatePulseIfRequired() {
-  if (pulseActive) {
-    remainingPulseLength--;
-    
-    if (remainingPulseLength == 0) {
-      pulseActive = false;
-      analogWrite(PULSING_PIN, 0);
-    }
-  }
 }
 
 /**
@@ -94,8 +84,7 @@ inline void terminatePulseIfRequired() {
  */
 inline void senseForHeartbeat() {
   int beatValue = analogRead(SENSING_PIN);
-  if (beatValue >= 20 && !inhibitPeek) {
-    inhibitPeek = true;
+  if (isRisingEdge(beatValue)) {
     inhibitMeasurement = false;
     absSampleDiff.clear();
     if (!firstHeartbeatFound && lastAmplitude > 1){
@@ -105,9 +94,23 @@ inline void senseForHeartbeat() {
     }
     beatReady = true;
   }
-  if (beatValue < 20 && inhibitPeek) {
-    inhibitPeek = false;
-  } 
+}
+
+/**
+ * Decides whether the given value represents a rising edge.
+ * 
+ * Values lower than 20 are omitted because they are assumed to be arbitrary fluctuations.
+ * The function assumes value to be a falling edge if it drops under 20 and a signal was
+ * present before.
+ */
+inline bool isRisingEdge(int value) {
+  if (value >= 20 && !insideSignal) {
+    insideSignal = true;
+    return true;
+  }
+  if (value < 20 && insideSignal) {
+    insideSignal = false;
+  }
 }
 
 /**
@@ -128,8 +131,6 @@ inline void mesureHeartbeatAmplitude() {
   }
 }
 
-volatile bool pulseTriggered = false;
-
 /**
  * Sends a pulse.
  * 
@@ -140,12 +141,26 @@ void sendPulse(int length, int scale) {
   analogWrite(PULSING_PIN, scale);
   pulseActive = true;
   remainingPulseLength = length;
-  pulseTriggered = true;
-  intCount = freqCtr;
+  pulseTriggered = true; // if pulseTriggered is true serial print is triggered in loop() 
+}
+
+/**
+ * Terminates a pulse if its time length exceeded.
+ */
+inline void terminatePulseIfDurationExceeded() {
+  if (pulseActive) {
+    remainingPulseLength--;
+    
+    if (remainingPulseLength == 0) {
+      pulseActive = false;
+      analogWrite(PULSING_PIN, 0);
+    }
+  }
 }
 
 void SEND_PULSE(float ampl) {
   sendPulse(14, (ampl * 255) / 5);
+  intCount = freqCtr;
 }
 
 volatile int localBpm = 0;
@@ -175,7 +190,7 @@ int BPM_TO_FREQ(int bpm) {
 }
 
 void loop() {
-  if (!firstHeartbeatFound) return; 
+  if (!firstHeartbeatFound) return; // inibits behavior in setup phase of the heart
   
   cli();
   
@@ -185,13 +200,6 @@ void loop() {
   
   sei();
   
-  if (pulseTriggered) {
-    Serial.println("Pulse triggered");
-    Serial.print("Last ampl: ");
-    Serial.println(lastAmplitude);
-    pulseTriggered = false;
-  }
- 
   if (lBeat) {
     PACEMAKER_I_HEART_BEAT();
     lastHeartbeatTime = millis();
@@ -202,6 +210,13 @@ void loop() {
 
   // Maybe more carful with interrupts here
   PACEMAKER();
+
+  if (pulseTriggered) {
+    Serial.println("Pulse triggered");
+    Serial.print("Last ampl: ");
+    Serial.println(lastAmplitude);
+    pulseTriggered = false;
+  }
 
   if (lBeat) {   
     Serial.print("Beat: ");
